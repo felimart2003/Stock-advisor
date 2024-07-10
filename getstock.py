@@ -7,12 +7,17 @@ import re
 
 def get_data(ticker):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'}
+    URL = f'https://ca.finance.yahoo.com/quote/{ticker}'
     stats_url = f'https://ca.finance.yahoo.com/quote/{ticker}/key-statistics' # if there is no stats page it will redirect but idk if this will work w scrapper
     profile_url = f'https://ca.finance.yahoo.com/quote/{ticker}/profile'
+    r_norm = requests.get(URL, headers=headers)
     r = requests.get(stats_url, headers=headers)
     r_profile = requests.get(profile_url, headers=headers)
     soup = BeautifulSoup(r.text, 'html.parser')
     soup_profile = BeautifulSoup(r_profile.text, 'html.parser')
+
+    # Error checking if there is a Stats page
+    has_stats = BeautifulSoup(r_norm.text, 'html.parser').find('li', {'data-test': 'STATISTICS'}) != None
 
     all_stats = soup.findAll('td', {'class': 'Fw(500) Ta(end) Pstart(10px) Miw(60px)'})
 
@@ -40,7 +45,7 @@ def get_data(ticker):
 
     return stock
 
-print(get_data('GFL.TO'))
+print(get_data('BTC-CAD'))
 
 # If no stats page then look at performance of last 5-year or risk and if no risk don't buy
 
