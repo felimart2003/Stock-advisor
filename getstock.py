@@ -13,12 +13,20 @@ def get_data(ticker):
     r_profile = requests.get(profile_url, headers=headers)
     soup = BeautifulSoup(r.text, 'html.parser')
     soup_profile = BeautifulSoup(r_profile.text, 'html.parser')
+
+    all_stats = soup.findAll('td', {'class': 'Fw(500) Ta(end) Pstart(10px) Miw(60px)'})
+
     stock = {
         'ticker': ticker,
         'name': re.sub(r' \(.*\)', '', soup.find('h1', {'class': 'D(ib) Fz(18px)'}).text),
         'price': soup.find('fin-streamer', {'class': 'Fw(b) Fz(36px) Mb(-4px) D(ib)'}).text,
         'desc': soup_profile.find('p', {'class': 'Mt(15px) Lh(1.6)'}).text,
+
+        # 'test': soup.findAll('div', {'class': 'Pos(r) Mt(10px)'}),
+        # Forward P/E
+        'FP/E': 
         # Forward Annual Dividend Yield
+        'FADY': soup.find('div', {'class': 'Pstart(20px) smartphone_Pstart(0px)'}).findChild
         'FADY': soup.find('td', {'table': 'W(100%) Bdcl(c) '})[2].find('td', {'class': 'Fw(500) Ta(end) Pstart(10px) Miw(60px)'}).text,
         # 5 Year Average Dividend Yield
         '5YADY': soup.find('td', {'table': 'W(100%) Bdcl(c) '})[5].find('td', {'class': 'Fw(500) Ta(end) Pstart(10px) Miw(60px)'}).text,
@@ -28,17 +36,18 @@ def get_data(ticker):
 
     return stock
 
-print(get_data('XAU.TO'))
+print(get_data('GFL.TO'))
 
 # If no stats page then look at performance of last 5-year or risk and if no risk don't buy
 
 #algo: 
-# forward Dividend & Yield > 5 Year Average Dividend Yield -> Undervalued
 # forward P/E ---> P/E Ratio <= 25
 # Price/Book ----> P/B Ratio <= 3
-# Payout ratio <= 75%
 # Diluted EPS ---> EPS <= 8%
 # Total Debt/Equity (mrq) <= 70%
+# forward Dividend & Yield > 
+# 5 Year Average Dividend Yield -> Undervalued
+# Payout ratio <= 75%
 
 # EXTRA: 
 # ?Look at Analysis/ recommendation rating????
