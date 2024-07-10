@@ -22,16 +22,20 @@ def get_data(ticker):
         'price': soup.find('fin-streamer', {'class': 'Fw(b) Fz(36px) Mb(-4px) D(ib)'}).text,
         'desc': soup_profile.find('p', {'class': 'Mt(15px) Lh(1.6)'}).text,
 
-        # 'test': soup.findAll('div', {'class': 'Pos(r) Mt(10px)'}),
-        # Forward P/E
-        'FP/E': 
+        # Trailing P/E
+        'P/E': all_stats[2].text,
+        # Price/Book (mrq - most recent quarter)
+        'P/B': all_stats[6].text,
+        # Diluted EPS (ttm - trailing twelve months)
+        'EPS': all_stats[50].text,
+        # Total Debt/Equity (mrq)
+        'D/E': all_stats[55].text,
         # Forward Annual Dividend Yield
-        'FADY': soup.find('div', {'class': 'Pstart(20px) smartphone_Pstart(0px)'}).findChild
-        'FADY': soup.find('td', {'table': 'W(100%) Bdcl(c) '})[2].find('td', {'class': 'Fw(500) Ta(end) Pstart(10px) Miw(60px)'}).text,
+        'FADY': all_stats[29].text,
         # 5 Year Average Dividend Yield
-        '5YADY': soup.find('td', {'table': 'W(100%) Bdcl(c) '})[5].find('td', {'class': 'Fw(500) Ta(end) Pstart(10px) Miw(60px)'}).text,
+        '5YADY': all_stats[32].text,
         # Payout Ratio
-        'Payout': soup.find('td', {'table': 'W(100%) Bdcl(c) '})[6].find('td', {'class': 'Fw(500) Ta(end) Pstart(10px) Miw(60px)'}).text,
+        'PR': all_stats[33].text
     }
 
     return stock
