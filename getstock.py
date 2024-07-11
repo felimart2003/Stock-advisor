@@ -8,7 +8,7 @@ import re
 def strtonum(dict):
     for key, value in dict.items():
         if value == 'N/A':
-            print(f'{value} is listed as "N/A"')
+            print(f'{key}: {value} is listed as "N/A"')
             continue
         # Convert to int
         try:
@@ -37,7 +37,7 @@ def get_data(ticker):
     has_stats = BeautifulSoup(r_norm.text, 'html.parser').find('li', {'data-test': 'STATISTICS'}) != None
     if not has_stats:
         print(f'No stats accessible for {ticker}')
-        return 0
+        return None
 
     all_stats = soup.findAll('td', {'class': 'Fw(500) Ta(end) Pstart(10px) Miw(60px)'})
 
@@ -78,8 +78,9 @@ def get_data(ticker):
 def algo_analysis(dict):
     score = 0
     dict = strtonum(dict)
+    # 2 points
     if dict['P/E'] <= 25:
-        score +=1
+        score +=2
         print('P/E is valid')
     if dict['P/B'] <= 3:
         score +=1
@@ -90,20 +91,24 @@ def algo_analysis(dict):
     if dict['D/E'] <= 70:
         score +=1
         print('D/E is valid')
+    # 3 points
     if dict['FADY'] > dict['5YADY']:
-        score +=1
+        score +=3
         print('This stock is undervalued (FADY > 5YADY)!')
     if dict['PR'] <= 75:
         score +=1
         print('PR is valid')
-    print(f'The score for this stock is {score}/6')
+    # Total = 9 points
+    print(f'The score for this stock is {score}/9 = ' + (score/9))
     return score
 
 def main():
     stock_to_search = 'IAG.TO'
     stock_dict = get_data(stock_to_search)
-    print(f'Getting stock data for {stock_to_search}...\n{stock_dict}\n')
-    return algo_analysis(stock_dict)
+    # If the stock dictionary isn't None
+    if stock_dict:
+        print(f'Getting stock data for {stock_to_search}...\n{stock_dict}\n')
+        return algo_analysis(stock_dict)
 
 
 if __name__ == '__main__':
