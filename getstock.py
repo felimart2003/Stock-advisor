@@ -5,10 +5,27 @@ import re
 # Portfolio analysis functionality 
 # portfolio_url = input('Paste the link to the url of the portfolio you would like to analyze here: ')
 
+def strtonum(dict):
+    for key, value in dict.items():
+        if value == 'N/A':
+            print(f'{value} is listed as "N/A"')
+            continue
+        # Convert to int
+        try:
+            value = value.replace(',','').replace('%','')
+            dict[key] = int(value)
+        except ValueError:
+            # Convert to float
+            try:
+                dict[key] = float(value)
+            except ValueError:
+                print(f'Unable to convert {value} to num')
+    return dict
+
 def get_data(ticker):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'}
     URL = f'https://ca.finance.yahoo.com/quote/{ticker}'
-    stats_url = f'https://ca.finance.yahoo.com/quote/{ticker}/key-statistics' # if there is no stats page it will redirect but idk if this will work w scrapper
+    stats_url = f'https://ca.finance.yahoo.com/quote/{ticker}/key-statistics'
     profile_url = f'https://ca.finance.yahoo.com/quote/{ticker}/profile'
     r_norm = requests.get(URL, headers=headers)
     r = requests.get(stats_url, headers=headers)
@@ -18,6 +35,9 @@ def get_data(ticker):
 
     # Error checking if there is a Stats page
     has_stats = BeautifulSoup(r_norm.text, 'html.parser').find('li', {'data-test': 'STATISTICS'}) != None
+    if not has_stats:
+        print(f'No stats accessible for {ticker}')
+        return 0
 
     all_stats = soup.findAll('td', {'class': 'Fw(500) Ta(end) Pstart(10px) Miw(60px)'})
 
@@ -43,11 +63,9 @@ def get_data(ticker):
         'PR': all_stats[33].text
     }
 
+    print(f'Data collected from {stock.name}')
+
     return stock
-
-print(get_data('BTC-CAD'))
-
-# If no stats page then look at performance of last 5-year or risk and if no risk don't buy
 
 #algo: 
 # forward P/E ---> P/E Ratio <= 25
@@ -57,8 +75,42 @@ print(get_data('BTC-CAD'))
 # forward Dividend & Yield > 
 # 5 Year Average Dividend Yield -> Undervalued
 # Payout ratio <= 75%
+def algo_analysis(dict):
+    score = 0
+    dict = strtonum(dict)
+    if dict['P/E'] <= 25:
+        score +=1
+        print('P/E is valid')
+    if dict['P/B'] <= 3:
+        score +=1
+        print('P/B is valid')
+    if dict['EPS'] <= 8:
+        score +=1
+        print('EPS is valid')
+    if dict['D/E'] <= 70:
+        score +=1
+        print('D/E is valid')
+    if dict['FADY'] > dict['5YADY']:
+        score +=1
+        print('This stock is undervalued (FADY > 5YADY)!')
+    if dict['PR'] <= 75:
+        score +=1
+        print('PR is valid')
+    print(f'The score for this stock is {score}/6')
+    return score
+
+def main():
+    stock_to_search = 'IAG.TO'
+    stock_dict = get_data(stock_to_search)
+    print(f'Getting stock data for {stock_to_search}...\n{stock_dict}\n')
+    return algo_analysis(stock_dict)
+
+
+if __name__ == '__main__':
+    main()
+
 
 # EXTRA: 
 # ?Look at Analysis/ recommendation rating????
-# ?Historical data for 5 years, take first and last value and see if current is higher than 5 yrs ago
-# ?Give score on stocks
+# If no stats page then look at performance of last 5-year or risk and if no risk don't buy
+#   - ?Historical data for 5 years, take first and last value and see if current is higher than 5 yrs ago
