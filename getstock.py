@@ -10,8 +10,11 @@ def strtonum(dict):
     excluded = ['ticker', 'name', 'price', 'desc']
 
     for key, value in dict.items():
-        if key in excluded or value == 'N/A':
-            print(f'The value for {key} is listed as "N/A" or is an excluded key')
+        if key in excluded:
+            continue
+        if value == 'N/A':
+            print(f'The value for {key} is listed as "N/A"')
+            dict.pop(key)
             continue
         # Convert to int
         try:
@@ -79,31 +82,37 @@ def get_data(ticker):
 # 5 Year Average Dividend Yield -> Undervalued
 # Payout ratio <= 75%
 def algo_analysis(dict):
+    print(f'Analysing {dict["name"]} ({dict["ticker"]}): ')
     score = 0
     dict = strtonum(dict)
-    # 2 points
-    if dict['P/E'] <= 25:
-        score +=2
-        print('P/E is valid')
-    if dict['P/B'] <= 3:
-        score +=1
-        print('P/B is valid')
-    if dict['EPS'] <= 8:
-        score +=1
-        print('EPS is valid')
-    if dict['D/E'] <= 70:
-        score +=1
-        print('D/E is valid')
-    # 3 points
-    if dict['FADY'] > dict['5YADY']:
-        score +=3
-        print('This stock is undervalued (FADY > 5YADY)!')
-    if dict['PR'] <= 75:
-        score +=1
-        print('PR is valid')
+
+    # Algorithm scoring
+    try:
+        # 3 points
+        if dict['FADY'] > dict['5YADY']:
+            score +=3
+            print('This stock is undervalued (FADY > 5YADY)!!!')
+        # 2 points
+        if dict['P/E'] <= 25:
+            score +=2
+            print('P/E is great!')
+        if dict['P/B'] <= 3:
+            score +=1
+            print('P/B is great!')
+        if dict['EPS'] <= 8:
+            score +=1
+            print('EPS is great!')
+        if dict['D/E'] <= 70:
+            score +=1
+            print('D/E is great!')
+        if dict['PR'] <= 75:
+            score +=1
+            print('PR is great!')
+    except KeyError:
+        print('Unable to obtain analysis of this stock :(')
 
     # Total = 9 points
-    print(f'The score for this stock is {score}/9 => {(score/9)*100}%')
+    print(f'\nThe score for this stock is {score}/9 => {(score/9)*100}%')
     return score
 
 def main():
@@ -113,6 +122,8 @@ def main():
     if stock_dict:
         print(f'Getting stock data for {stock_to_search}...\n{stock_dict}\n')
         return algo_analysis(stock_dict)
+    else:
+        print(f'We are unable to provide insight on this stock -- it looks like {stock_to_search} doesn\'t have a Statistics page.')
 
 
 if __name__ == '__main__':
