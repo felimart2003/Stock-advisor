@@ -6,9 +6,12 @@ import re
 # portfolio_url = input('Paste the link to the url of the portfolio you would like to analyze here: ')
 
 def strtonum(dict):
+    # Keys to be exculded from being converted to numbers
+    excluded = ['ticker', 'name', 'price', 'desc']
+
     for key, value in dict.items():
-        if value == 'N/A':
-            print(f'{key}: {value} is listed as "N/A"')
+        if key in excluded or value == 'N/A':
+            print(f'The value for {key} is listed as "N/A" or is an excluded key')
             continue
         # Convert to int
         try:
@@ -44,7 +47,7 @@ def get_data(ticker):
     stock = {
         'ticker': ticker,
         'name': re.sub(r' \(.*\)', '', soup.find('h1', {'class': 'D(ib) Fz(18px)'}).text),
-        'price': soup.find('fin-streamer', {'class': 'Fw(b) Fz(36px) Mb(-4px) D(ib)'}).text,
+        'price': f"${soup.find('fin-streamer', {'class': 'Fw(b) Fz(36px) Mb(-4px) D(ib)'}).text} CAD",
         'desc': soup_profile.find('p', {'class': 'Mt(15px) Lh(1.6)'}).text,
 
         # Trailing P/E
@@ -63,7 +66,7 @@ def get_data(ticker):
         'PR': all_stats[33].text
     }
 
-    print(f'Data collected from {stock.name}')
+    print(f'Data collected from {stock["name"]}')
 
     return stock
 
@@ -98,12 +101,13 @@ def algo_analysis(dict):
     if dict['PR'] <= 75:
         score +=1
         print('PR is valid')
+
     # Total = 9 points
-    print(f'The score for this stock is {score}/9 = ' + (score/9))
+    print(f'The score for this stock is {score}/9 => {(score/9)*100}%')
     return score
 
 def main():
-    stock_to_search = 'IAG.TO'
+    stock_to_search = input('Enter a ticker symbol: ')
     stock_dict = get_data(stock_to_search)
     # If the stock dictionary isn't None
     if stock_dict:
@@ -116,6 +120,7 @@ if __name__ == '__main__':
 
 
 # EXTRA: 
+# Portfolio functionality
 # ?Look at Analysis/ recommendation rating????
 # If no stats page then look at performance of last 5-year or risk and if no risk don't buy
 #   - ?Historical data for 5 years, take first and last value and see if current is higher than 5 yrs ago
