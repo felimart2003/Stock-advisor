@@ -14,7 +14,7 @@ def strtonum(dict):
             continue
         if value == 'N/A':
             print(f'The value for {key} is listed as "N/A"')
-            dict.pop(key)
+            # dict.pop(key) # Changes the size of dict on iteration :(
             continue
         # Convert to int
         try:
@@ -66,14 +66,16 @@ def get_data(ticker):
         # 5 Year Average Dividend Yield
         '5YADY': all_stats[32].text,
         # Payout Ratio
-        'PR': all_stats[33].text
+        'PR': all_stats[33].text,
+        # Current Ratio (mrq)
+        'CR': all_stats[56].text
     }
 
     print(f'Data collected from {stock["name"]}')
-
+    print(stock['CR'])
     return stock
 
-#algo: 
+# Algorithm: 
 # forward P/E ---> P/E Ratio <= 25
 # Price/Book ----> P/B Ratio <= 3
 # Diluted EPS ---> EPS <= 8%
@@ -89,11 +91,11 @@ def algo_analysis(dict):
     # Algorithm scoring
     try:
         # 3 points
-        if dict['FADY'] > dict['5YADY']:
+        if isinstance(dict['5YADY'], (float)) and dict['FADY'] > dict['5YADY'] :
             score +=3
             print('This stock is undervalued (FADY > 5YADY)!!!')
         # 2 points
-        if dict['P/E'] <= 25:
+        if dict['P/E'] != 'N/A' and dict['P/E'] <= 25:
             score +=2
             print('P/E is great!')
         if dict['P/B'] <= 3:
@@ -108,15 +110,18 @@ def algo_analysis(dict):
         if dict['PR'] <= 75:
             score +=1
             print('PR is great!')
+        if dict['CR'] >= 1:
+            score +=1
+            print('CR is great!') # Current liquidity ratio is greater than or equal to 1!
     except KeyError:
         print('Unable to obtain analysis of this stock :(')
 
     # Total = 9 points
-    print(f'\nThe score for this stock is {score}/9 => {(score/9)*100}%')
+    print(f'\nThe score for this stock is {score}/10 => {(score/10)*100}%')
     return score
 
 def main():
-    stock_to_search = input('Enter a ticker symbol: ')
+    stock_to_search = input('Enter a ticker symbol: ').upper()
     stock_dict = get_data(stock_to_search)
     # If the stock dictionary isn't None
     if stock_dict:
