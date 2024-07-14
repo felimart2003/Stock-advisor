@@ -29,13 +29,16 @@ def get_data(ticker):
     URL = f'https://ca.finance.yahoo.com/quote/{ticker}'
     stats_url = f'https://ca.finance.yahoo.com/quote/{ticker}/key-statistics'
     profile_url = f'https://ca.finance.yahoo.com/quote/{ticker}/profile'
+    # Used to check for Stats page
     r_norm = requests.get(URL, headers=headers)
+    # Stats page
     r = requests.get(stats_url, headers=headers)
+    # Used for description of stock
     r_profile = requests.get(profile_url, headers=headers)
     soup = BeautifulSoup(r.text, 'html.parser')
     soup_profile = BeautifulSoup(r_profile.text, 'html.parser')
 
-    # Error checking if there is a Stats page
+    # Checking if there is a Stats page
     has_stats = BeautifulSoup(r_norm.text, 'html.parser').find('li', {'data-test': 'STATISTICS'}) != None
     if not has_stats:
         print(f'No statistics accessible for {ticker}')
@@ -80,7 +83,10 @@ def get_data(ticker):
 def algo_analysis(dict):
     if dict == None:
         return None
-    print(f'Analyzing {dict["name"]} ({dict["ticker"]}): ')
+    print(f'PRICE = {dict['price']}')
+    print(f'{dict['desc']}')
+    print(f'~\nAnalyzing {dict["name"]} ({dict["ticker"]}): ')
+
     score = 0
     dict = strtonum(dict)
 
@@ -128,7 +134,7 @@ def portfolio(portfolio_url):
             ticker_list.append(ticker_symbol)
     
     for ticker in ticker_list:
-        print(f'\n--------------------{ticker}--------------------')
+        print(f'\n\n--------------------{ticker}--------------------')
         algo_analysis(get_data(ticker))
 
 def main():
@@ -144,7 +150,6 @@ if __name__ == '__main__':
 
 
 # EXTRA: 
-# Portfolio functionality
 # ?Look at Analysis/ recommendation rating????
 # If no stats page then look at performance of last 5-year or risk and if no risk don't buy
 #   - ?Historical data for 5 years, take first and last value and see if current is higher than 5 yrs ago
