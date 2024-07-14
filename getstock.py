@@ -2,9 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
-# Portfolio analysis functionality 
-# portfolio_url = input('Paste the link to the url of the portfolio you would like to analyze here: ')
-
 def strtonum(dict):
     # Keys to be exculded from being converted to numbers
     excluded = ['ticker', 'name', 'price', 'desc']
@@ -42,10 +39,10 @@ def get_data(ticker):
     # Error checking if there is a Stats page
     has_stats = BeautifulSoup(r_norm.text, 'html.parser').find('li', {'data-test': 'STATISTICS'}) != None
     if not has_stats:
-        print(f'No stats accessible for {ticker}')
+        print(f'No statistics accessible for {ticker}\n')
         return None
 
-    all_stats = soup.findAll('td', {'class': 'Fw(500) Ta(end) Pstart(10px) Miw(60px)'})
+    all_stats = soup.find_all('td', {'class': 'Fw(500) Ta(end) Pstart(10px) Miw(60px)'})
 
     stock = {
         'ticker': ticker,
@@ -71,8 +68,7 @@ def get_data(ticker):
         'CR': all_stats[56].text
     }
 
-    print(f'Data collected from {stock["name"]}')
-    print(stock['CR'])
+    print(f'Data collected from {stock["name"]}...')
     return stock
 
 # Algorithm: 
@@ -84,7 +80,9 @@ def get_data(ticker):
 # 5 Year Average Dividend Yield -> Undervalued
 # Payout ratio <= 75%
 def algo_analysis(dict):
-    print(f'Analysing {dict["name"]} ({dict["ticker"]}): ')
+    if dict == None:
+        return None
+    print(f'Analyzing {dict["name"]} ({dict["ticker"]}): ')
     score = 0
     dict = strtonum(dict)
 
@@ -120,15 +118,38 @@ def algo_analysis(dict):
     print(f'\nThe score for this stock is {score}/10 => {(score/10)*100}%')
     return score
 
+# Portfolio analysis functionality 
+def portfolio(portfolio_url):
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'}
+    # portfolio_url = input('Paste the link to the url of the portfolio you would like to analyze here: ')
+    r = requests.get(portfolio_url, headers=headers)
+    soup = BeautifulSoup(r.text, 'html.parser')
+    companies = soup.find_all('a', {'data-test': 'quoteLink'})
+    ticker_list = []
+    for company in companies:
+        href_value = company.get('href')
+        if href_value and '/quote/' in href_value:
+            ticker_symbol = href_value.split('/quote/')[1].rstrip('/')
+            ticker_list.append(ticker_symbol)
+    
+    for ticker in ticker_list:
+        print(f'DATA FOR {ticker}:')
+        algo_analysis(get_data(ticker))
+
 def main():
-    stock_to_search = input('Enter a ticker symbol: ').upper()
-    stock_dict = get_data(stock_to_search)
-    # If the stock dictionary isn't None
-    if stock_dict:
-        print(f'Getting stock data for {stock_to_search}...\n{stock_dict}\n')
-        return algo_analysis(stock_dict)
+    prompt = input('Enter a share link for a portfolio or a ticker symbol to receive a stock analysis: ')
+    if prompt.startswith('https://'):
+        portfolio(prompt)
     else:
-        print(f'We are unable to provide insight on this stock -- it looks like {stock_to_search} doesn\'t have a Statistics page.')
+        get_data(prompt)
+    # stock_to_search = input('Enter a ticker symbol: ').upper()
+    # stock_dict = get_data(stock_to_search)
+    # # If the stock dictionary isn't None
+    # if stock_dict:
+    #     print(f'Getting stock data for {stock_to_search}...\n{stock_dict}\n')
+    #     return algo_analysis(stock_dict)
+    # else:
+    #     print(f'We are unable to provide insight on this stock -- it looks like {stock_to_search} doesn\'t have a Statistics page.')
 
 
 if __name__ == '__main__':
