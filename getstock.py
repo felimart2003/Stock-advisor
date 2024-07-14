@@ -3,15 +3,14 @@ from bs4 import BeautifulSoup
 import re
 
 def strtonum(dict):
-    # Keys to be exculded from being converted to numbers
+    # Keys to be excluded from being converted to numbers
     excluded = ['ticker', 'name', 'price', 'desc']
 
     for key, value in dict.items():
         if key in excluded:
             continue
         if value == 'N/A':
-            print(f'The value for {key} is listed as "N/A"')
-            # dict.pop(key) # Changes the size of dict on iteration :(
+            print(f'Unable to process {key}. The value for {key} is listed as "N/A"')
             continue
         # Convert to int
         try:
@@ -39,7 +38,7 @@ def get_data(ticker):
     # Error checking if there is a Stats page
     has_stats = BeautifulSoup(r_norm.text, 'html.parser').find('li', {'data-test': 'STATISTICS'}) != None
     if not has_stats:
-        print(f'No statistics accessible for {ticker}\n')
+        print(f'No statistics accessible for {ticker}')
         return None
 
     all_stats = soup.find_all('td', {'class': 'Fw(500) Ta(end) Pstart(10px) Miw(60px)'})
@@ -68,7 +67,6 @@ def get_data(ticker):
         'CR': all_stats[56].text
     }
 
-    print(f'Data collected from {stock["name"]}...')
     return stock
 
 # Algorithm: 
@@ -86,36 +84,33 @@ def algo_analysis(dict):
     score = 0
     dict = strtonum(dict)
 
-    # Algorithm scoring
-    try:
-        # 3 points
-        if isinstance(dict['5YADY'], (float)) and dict['FADY'] > dict['5YADY'] :
-            score +=3
-            print('This stock is undervalued (FADY > 5YADY)!!!')
-        # 2 points
-        if dict['P/E'] != 'N/A' and dict['P/E'] <= 25:
-            score +=2
-            print('P/E is great!')
-        if dict['P/B'] <= 3:
-            score +=1
-            print('P/B is great!')
-        if dict['EPS'] <= 8:
-            score +=1
-            print('EPS is great!')
-        if dict['D/E'] <= 70:
-            score +=1
-            print('D/E is great!')
-        if dict['PR'] <= 75:
-            score +=1
-            print('PR is great!')
-        if dict['CR'] >= 1:
-            score +=1
-            print('CR is great!') # Current liquidity ratio is greater than or equal to 1!
-    except KeyError:
-        print('Unable to obtain analysis of this stock :(')
+    # Algorithm scoring:
+    # 3 points
+    if isinstance(dict['5YADY'], float) and dict['FADY'] > dict['5YADY'] :
+        score +=3
+        print('This stock is undervalued (FADY > 5YADY)!!!')
+    # 2 points
+    if dict['P/E'] != 'N/A' and dict['P/E'] <= 25:
+        score +=2
+        print('P/E is good!')
+    if dict['P/B'] <= 3:
+        score +=1
+        print('P/B is good!')
+    if dict['EPS'] <= 8:
+        score +=1
+        print('EPS is good!')
+    if dict['D/E'] <= 70:
+        score +=1
+        print('D/E is good!')
+    if dict['PR'] <= 75:
+        score +=1
+        print('PR is good!')
+    if dict['CR'] >= 1:
+        score +=1
+        print('CR is good!') # Current liquidity ratio is greater than or equal to 1!
 
     # Total = 9 points
-    print(f'\nThe score for this stock is {score}/10 => {(score/10)*100}%')
+    print(f'The score for this stock is {score}/10 => {(score/10)*100}%')
     return score
 
 # Portfolio analysis functionality 
@@ -133,7 +128,7 @@ def portfolio(portfolio_url):
             ticker_list.append(ticker_symbol)
     
     for ticker in ticker_list:
-        print(f'DATA FOR {ticker}:')
+        print(f'\n--------------------{ticker}--------------------')
         algo_analysis(get_data(ticker))
 
 def main():
@@ -142,14 +137,6 @@ def main():
         portfolio(prompt)
     else:
         get_data(prompt)
-    # stock_to_search = input('Enter a ticker symbol: ').upper()
-    # stock_dict = get_data(stock_to_search)
-    # # If the stock dictionary isn't None
-    # if stock_dict:
-    #     print(f'Getting stock data for {stock_to_search}...\n{stock_dict}\n')
-    #     return algo_analysis(stock_dict)
-    # else:
-    #     print(f'We are unable to provide insight on this stock -- it looks like {stock_to_search} doesn\'t have a Statistics page.')
 
 
 if __name__ == '__main__':
