@@ -2,19 +2,15 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
-# Portfolio analysis functionality 
-# portfolio_url = input('Paste the link to the url of the portfolio you would like to analyze here: ')
-
 def strtonum(dict):
-    # Keys to be exculded from being converted to numbers
+    # Keys to be excluded from being converted to numbers
     excluded = ['ticker', 'name', 'price', 'desc']
 
     for key, value in dict.items():
         if key in excluded:
             continue
         if value == 'N/A':
-            print(f'The value for {key} is listed as "N/A"')
-            dict.pop(key)
+            print(f'Unable to process {key}. The value for {key} is listed as "N/A"')
             continue
         # Convert to int
         try:
@@ -42,10 +38,10 @@ def get_data(ticker):
     # Error checking if there is a Stats page
     has_stats = BeautifulSoup(r_norm.text, 'html.parser').find('li', {'data-test': 'STATISTICS'}) != None
     if not has_stats:
-        print(f'No stats accessible for {ticker}')
+        print(f'No statistics accessible for {ticker}')
         return None
 
-    all_stats = soup.findAll('td', {'class': 'Fw(500) Ta(end) Pstart(10px) Miw(60px)'})
+    all_stats = soup.find_all('td', {'class': 'Fw(500) Ta(end) Pstart(10px) Miw(60px)'})
 
     stock = {
         'ticker': ticker,
@@ -66,14 +62,14 @@ def get_data(ticker):
         # 5 Year Average Dividend Yield
         '5YADY': all_stats[32].text,
         # Payout Ratio
-        'PR': all_stats[33].text
+        'PR': all_stats[33].text,
+        # Current Ratio (mrq)
+        'CR': all_stats[56].text
     }
-
-    print(f'Data collected from {stock["name"]}')
 
     return stock
 
-#algo: 
+# Algorithm: 
 # forward P/E ---> P/E Ratio <= 25
 # Price/Book ----> P/B Ratio <= 3
 # Diluted EPS ---> EPS <= 8%
@@ -82,48 +78,65 @@ def get_data(ticker):
 # 5 Year Average Dividend Yield -> Undervalued
 # Payout ratio <= 75%
 def algo_analysis(dict):
-    print(f'Analysing {dict["name"]} ({dict["ticker"]}): ')
+    if dict == None:
+        return None
+    print(f'Analyzing {dict["name"]} ({dict["ticker"]}): ')
     score = 0
     dict = strtonum(dict)
 
-    # Algorithm scoring
-    try:
-        # 3 points
-        if dict['FADY'] > dict['5YADY']:
-            score +=3
-            print('This stock is undervalued (FADY > 5YADY)!!!')
-        # 2 points
-        if dict['P/E'] <= 25:
-            score +=2
-            print('P/E is great!')
-        if dict['P/B'] <= 3:
-            score +=1
-            print('P/B is great!')
-        if dict['EPS'] <= 8:
-            score +=1
-            print('EPS is great!')
-        if dict['D/E'] <= 70:
-            score +=1
-            print('D/E is great!')
-        if dict['PR'] <= 75:
-            score +=1
-            print('PR is great!')
-    except KeyError:
-        print('Unable to obtain analysis of this stock :(')
+    # Algorithm scoring:
+    # 3 points
+    if isinstance(dict['5YADY'], float) and dict['FADY'] > dict['5YADY'] :
+        score +=3
+        print('This stock is undervalued (FADY > 5YADY)!!!')
+    # 2 points
+    if dict['P/E'] != 'N/A' and dict['P/E'] <= 25:
+        score +=2
+        print('P/E is good!')
+    if dict['P/B'] <= 3:
+        score +=1
+        print('P/B is good!')
+    if dict['EPS'] <= 8:
+        score +=1
+        print('EPS is good!')
+    if dict['D/E'] <= 70:
+        score +=1
+        print('D/E is good!')
+    if dict['PR'] <= 75:
+        score +=1
+        print('PR is good!')
+    if dict['CR'] >= 1:
+        score +=1
+        print('CR is good!') # Current liquidity ratio is greater than or equal to 1!
 
     # Total = 9 points
-    print(f'\nThe score for this stock is {score}/9 => {(score/9)*100}%')
+    print(f'The score for this stock is {score}/10 => {(score/10)*100}%')
     return score
 
+# Portfolio analysis functionality 
+def portfolio(portfolio_url):
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'}
+    # portfolio_url = input('Paste the link to the url of the portfolio you would like to analyze here: ')
+    r = requests.get(portfolio_url, headers=headers)
+    soup = BeautifulSoup(r.text, 'html.parser')
+    companies = soup.find_all('a', {'data-test': 'quoteLink'})
+    ticker_list = []
+    for company in companies:
+        href_value = company.get('href')
+        if href_value and '/quote/' in href_value:
+            ticker_symbol = href_value.split('/quote/')[1].rstrip('/')
+            ticker_list.append(ticker_symbol)
+    
+    for ticker in ticker_list:
+        print(f'\n--------------------{ticker}--------------------')
+        algo_analysis(get_data(ticker))
+
 def main():
-    stock_to_search = input('Enter a ticker symbol: ')
-    stock_dict = get_data(stock_to_search)
-    # If the stock dictionary isn't None
-    if stock_dict:
-        print(f'Getting stock data for {stock_to_search}...\n{stock_dict}\n')
-        return algo_analysis(stock_dict)
+    prompt = input('Enter a share link for a portfolio or a ticker symbol to receive a stock analysis: ')
+    if prompt.startswith('https://'):
+        portfolio(prompt)
     else:
-        print(f'We are unable to provide insight on this stock -- it looks like {stock_to_search} doesn\'t have a Statistics page.')
+        get_data(prompt)
 
 
 if __name__ == '__main__':
