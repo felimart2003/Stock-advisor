@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Advisor — Your New Financial Advisor</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #232733;
+            --border: #2e3241;
+            --text: #e4e6ed;
+            --text-muted: #8b8fa3;
+            --green: #00c896;
+            --green-dim: rgba(0, 200, 150, 0.12);
+            --red: #ef4444;
+            --red-dim: rgba(239, 68, 68, 0.12);
+            --blue: #3b82f6;
+            --blue-dim: rgba(59, 130, 246, 0.12);
+            --yellow: #f59e0b;
+            --yellow-dim: rgba(245, 158, 11, 0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        header .logo {
+            width: 32px;
+            height: 32px;
+            background: var(--green);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--bg);
+        }
+
+        header h1 {
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+
+        header h1 span {
+            color: var(--green);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 3rem 0 2rem;
+        }
+
+        .hero h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            line-height: 1.3;
+        }
+
+        .hero p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            max-width: 520px;
+            margin: 0 auto 2rem;
+            line-height: 1.6;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 0.5rem;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 0.85rem 1.15rem;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-box input:focus {
+            border-color: var(--green);
+        }
+
+        .search-box button {
+            padding: 0.85rem 1.5rem;
+            border-radius: 10px;
+            border: none;
+            background: var(--green);
+            color: var(--bg);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .search-box button:hover {
+            opacity: 0.9;
+        }
+
+        .search-box button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: none;
+            text-align: center;
+            padding: 3rem 0;
+        }
+
+        .spinner.active {
+            display: block;
+        }
+
+        .spinner .dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            margin: 0 4px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .spinner .dot:nth-child(1) { animation-delay: -0.32s; }
+        .spinner .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .spinner p {
+            margin-top: 1rem;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Error */
+        .error-msg {
+            display: none;
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            background: var(--red-dim);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            color: var(--red);
+        }
+
+        .error-msg.active {
+            display: block;
+        }
+
+        /* Results */
+        #results {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        #results.active {
+            display: block;
+        }
+
+        .stock-header {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stock-header .top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .stock-header .name-section h3 {
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+
+        .stock-header .ticker-badge {
+            display: inline-block;
+            background: var(--blue-dim);
+            color: var(--blue);
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .stock-header .price {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--green);
+        }
+
+        .stock-header .description {
+            margin-top: 1rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.65;
+            max-height: 4.95rem;
+            overflow: hidden;
+            position: relative;
+            transition: max-height 0.3s;
+        }
+
+        .stock-header .description.expanded {
+            max-height: 1000px;
+        }
+
+        .stock-header .desc-toggle {
+            color: var(--blue);
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            display: inline-block;
+        }
+
+        .score-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .score-ring {
+            width: 130px;
+            height: 130px;
+            margin: 0 auto 1rem;
+            position: relative;
+        }
+
+        .score-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .score-ring .bg-ring {
+            stroke: var(--surface2);
+        }
+
+        .score-ring .fg-ring {
+            stroke: var(--green);
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s ease;
+        }
+
+        .score-ring .score-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .score-ring .score-text small {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .verdict {
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 0.35rem 1rem;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .verdict.strong-buy { background: var(--green-dim); color: var(--green); }
+        .verdict.consider { background: var(--blue-dim); color: var(--blue); }
+        .verdict.weak { background: var(--yellow-dim); color: var(--yellow); }
+        .verdict.avoid { background: var(--red-dim); color: var(--red); }
+
+        .checks-table {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .checks-table .table-head {
+            display: grid;
+            grid-template-columns: 1fr 120px 80px 70px;
+            padding: 0.9rem 1.25rem;
+            background: var(--surface2);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .checks-table .table-row {
+            display: grid;
+            grid-template-columns: 1fr 120px 80px 70px;
+            padding: 0.85rem 1.25rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.95rem;
+            align-items: center;
+        }
+
+        .checks-table .table-row:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .checks-table .status-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 0.75rem;
+        }
+
+        .status-icon.pass {
+            background: var(--green-dim);
+            color: var(--green);
+        }
+
+        .status-icon.fail {
+            background: var(--red-dim);
+            color: var(--red);
+        }
+
+        .disclaimer {
+            margin-top: 2.5rem;
+            padding: 1.25rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .disclaimer strong {
+            color: var(--yellow);
+        }
+
+        @media (max-width: 600px) {
+            .hero h2 { font-size: 1.5rem; }
+            .search-box { flex-direction: column; }
+            .search-box button { width: 100%; }
+            .checks-table .table-head,
+            .checks-table .table-row {
+                grid-template-columns: 1fr 90px 60px 60px;
+                font-size: 0.85rem;
+                padding: 0.75rem 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">$</div>
+        <h1>Stock <span>Advisor</span></h1>
+    </header>
+
+    <div class="container">
+        <div class="hero">
+            <h2>Your New Financial Advisor</h2>
+            <p>Enter a ticker symbol to get an instant value-investing analysis powered by real-time Yahoo Finance data.</p>
+            <div class="search-box">
+                <input type="text" id="tickerInput" placeholder="Enter ticker symbol (e.g. AAPL)" maxlength="10"
+                       autocomplete="off" spellcheck="false">
+                <button id="analyzeBtn" onclick="analyze()">Analyze</button>
+            </div>
+        </div>
+
+        <div class="spinner" id="spinner">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <p>Fetching data from Yahoo Finance...</p>
+        </div>
+
+        <div class="error-msg" id="errorMsg"></div>
+
+        <div id="results">
+            <div class="stock-header">
+                <div class="top-row">
+                    <div class="name-section">
+                        <h3 id="stockName"></h3>
+                    </div>
+                    <div class="price" id="stockPrice"></div>
+                </div>
+                <div class="description" id="stockDesc"></div>
+                <span class="desc-toggle" onclick="toggleDesc()">Show more</span>
+            </div>
+
+            <div class="score-card">
+                <div class="score-ring">
+                    <svg width="130" height="130" viewBox="0 0 130 130">
+                        <circle class="bg-ring" cx="65" cy="65" r="56" fill="none" stroke-width="10"/>
+                        <circle class="fg-ring" id="scoreRing" cx="65" cy="65" r="56" fill="none"
+                                stroke-width="10" stroke-dasharray="351.86" stroke-dashoffset="351.86"/>
+                    </svg>
+                    <div class="score-text" id="scoreText">0<small>/10</small></div>
+                </div>
+                <div class="verdict" id="verdictBadge"></div>
+            </div>
+
+            <div class="checks-table">
+                <div class="table-head">
+                    <div>Metric</div>
+                    <div>Value</div>
+                    <div>Points</div>
+                    <div>Status</div>
+                </div>
+                <div id="checksBody"></div>
+            </div>
+        </div>
+
+        <div class="disclaimer">
+            <strong>Disclaimer:</strong> This is for general information purposes only. These suggestions should not
+            be considered as professional financial advice. Investing in stocks involves risk, and past performance
+            is not indicative of future results. Always conduct your own research and consult with a qualified
+            financial advisor before making any investment decisions.
+        </div>
+    </div>
+
+    <script>
+        const tickerInput = document.getElementById('tickerInput');
+        const analyzeBtn  = document.getElementById('analyzeBtn');
+        const spinner     = document.getElementById('spinner');
+        const errorMsg    = document.getElementById('errorMsg');
+        const results     = document.getElementById('results');
+
+        tickerInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') analyze();
+        });
+
+        async function analyze() {
+            const ticker = tickerInput.value.trim();
+            if (!ticker) return;
+
+            // Reset UI
+            results.classList.remove('active');
+            errorMsg.classList.remove('active');
+            spinner.classList.add('active');
+            analyzeBtn.disabled = true;
+
+            try {
+                const res = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticker })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'Something went wrong.');
+                }
+
+                renderResults(data);
+            } catch (err) {
+                errorMsg.textContent = err.message;
+                errorMsg.classList.add('active');
+            } finally {
+                spinner.classList.remove('active');
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        function renderResults(data) {
+            const d = data.display;
+            document.getElementById('stockName').innerHTML =
+                `${escapeHtml(d.name)} <span class="ticker-badge">${escapeHtml(d.ticker)}</span>`;
+            document.getElementById('stockPrice').textContent = d.price;
+
+            const descEl = document.getElementById('stockDesc');
+            descEl.textContent = d.desc;
+            descEl.classList.remove('expanded');
+
+            // Score ring animation
+            const circumference = 2 * Math.PI * 56; // ~351.86
+            const offset = circumference - (data.percentage / 100) * circumference;
+            const ring = document.getElementById('scoreRing');
+            ring.style.strokeDashoffset = circumference;
+
+            // Pick color
+            let color = 'var(--red)';
+            if (data.percentage >= 70) color = 'var(--green)';
+            else if (data.percentage >= 50) color = 'var(--blue)';
+            else if (data.percentage >= 30) color = 'var(--yellow)';
+            ring.style.stroke = color;
+
+            requestAnimationFrame(() => {
+                ring.style.strokeDashoffset = offset;
+            });
+
+            document.getElementById('scoreText').innerHTML = `${data.score}<small>/${data.total}</small>`;
+
+            // Verdict
+            const badge = document.getElementById('verdictBadge');
+            badge.textContent = data.verdict;
+            badge.className = 'verdict ' + data.verdict.toLowerCase().replace(' ', '-');
+
+            // Checks table
+            const tbody = document.getElementById('checksBody');
+            tbody.innerHTML = '';
+            data.checks.forEach(c => {
+                const row = document.createElement('div');
+                row.className = 'table-row';
+                row.innerHTML = `
+                    <div>${escapeHtml(c.metric)}</div>
+                    <div>${escapeHtml(String(c.value))}</div>
+                    <div>${c.passed ? '+' + c.points : '0'}</div>
+                    <div><span class="status-icon ${c.passed ? 'pass' : 'fail'}">${c.passed ? '✓' : '✗'}</span></div>
+                `;
+                tbody.appendChild(row);
+            });
+
+            results.classList.add('active');
+        }
+
+        function toggleDesc() {
+            const el = document.getElementById('stockDesc');
+            const btn = el.nextElementSibling;
+            el.classList.toggle('expanded');
+            btn.textContent = el.classList.contains('expanded') ? 'Show less' : 'Show more';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(text));
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
